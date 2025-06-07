@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Better Healing", "VisEntities", "1.0.0")]
+    [Info("Better Healing", "VisEntities", "1.1.0")]
     [Description("Change how food and medical items affect players.")]
     public class BetterHealing : RustPlugin
     {
@@ -168,6 +168,7 @@ namespace Oxide.Plugins
         private void Init()
         {
             _plugin = this;
+            PermissionUtil.RegisterPermissions();
         }
 
         private void Unload()
@@ -178,7 +179,7 @@ namespace Oxide.Plugins
 
         private object OnHealingItemUse(MedicalTool medicalTool, BasePlayer player)
         {
-            if (player == null)
+            if (player == null || !PermissionUtil.HasPermission(player, PermissionUtil.USE))
                 return null;
 
             Item item = medicalTool.GetItem();
@@ -207,7 +208,7 @@ namespace Oxide.Plugins
             if (action != "consume")
                 return null;
 
-            if (player == null || item == null)
+            if (player == null || item == null || !PermissionUtil.HasPermission(player, PermissionUtil.USE))
                 return null;
 
             string shortName = item.info.shortname;
@@ -291,5 +292,31 @@ namespace Oxide.Plugins
         }
 
         #endregion Core
+
+        #region Permissions
+
+        public static class PermissionUtil
+        {
+            public const string USE = "betterhealing.use";
+            private static readonly List<string> _permissions = new List<string>
+            {
+                USE
+            };
+
+            public static void RegisterPermissions()
+            {
+                foreach (var permission in _permissions)
+                {
+                    _plugin.permission.RegisterPermission(permission, _plugin);
+                }
+            }
+
+            public static bool HasPermission(BasePlayer player, string permissionName)
+            {
+                return _plugin.permission.UserHasPermission(player.UserIDString, permissionName);
+            }
+        }
+
+        #endregion Permissions
     }
 }
